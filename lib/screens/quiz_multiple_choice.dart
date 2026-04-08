@@ -119,7 +119,7 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(title: Text(widget.bundesland)),
     body: Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(10),
       child: Column(
         children: [
 
@@ -177,7 +177,7 @@ Widget build(BuildContext context) {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1.2,
+                childAspectRatio: 0.9,
               ),
               itemBuilder: (context, index) {
                 final antwort = session.antworten[index];

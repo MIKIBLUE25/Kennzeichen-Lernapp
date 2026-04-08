@@ -126,21 +126,12 @@ void checkAntwort(String antwort) {
               "${session.aktuelleFrageNummer} / ${session.gesamtFragen}",
               style: const TextStyle(fontSize: 18),
             ),
-            // 🔥 Kennzeichen Design
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.black, width: 2),
-              ),
-              child: Text(
-                session.aktuellesKennzeichen,
-                style: const TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                ),
+            const SizedBox(height: 10),
+            Text(
+              session.aktuellesKennzeichen,
+              style: const TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
               ),
             ),
 

@@ -123,6 +123,11 @@ void checkAntwort(String antwort) {
         child: Column(
           children: [
             Text(
+              "${session.aktuelleFrageNummer} / ${session.gesamtFragen}",
+              style: const TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 10),
+            Text(
               session.aktuellesKennzeichen,
               style: const TextStyle(
                 fontSize: 40,

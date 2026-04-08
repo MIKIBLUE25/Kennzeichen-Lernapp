@@ -5,8 +5,6 @@ import 'screens/statistik_seite.dart';
 import 'data/kennzeichen_data.dart';
 import 'screens/quiz_multiple_choice.dart';
 import 'screens/quiz_input.dart';
-import '../logic/quiz_session.dart';
-import 'logic/quiz_logic.dart';
 
 
 void main() {

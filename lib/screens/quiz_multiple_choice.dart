@@ -115,65 +115,110 @@ void checkAntwort(String antwort) {
 }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.bundesland)),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-              "${session.aktuelleFrageNummer} / ${session.gesamtFragen}",
-              style: const TextStyle(fontSize: 18),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(title: Text(widget.bundesland)),
+    body: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+
+          // 🔥 Fortschritt
+          Text(
+            "${session.aktuelleFrageNummer} / ${session.gesamtFragen}",
+            style: const TextStyle(fontSize: 18),
+          ),
+
+          const SizedBox(height: 10),
+
+          // 🔥 Kennzeichen Design
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.black, width: 3),
             ),
-            const SizedBox(height: 10),
-            Text(
-              session.aktuellesKennzeichen,
-              style: const TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            Expanded(
-  child: GridView.builder(
-    itemCount: 4,
-    gridDelegate:
-        const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 2,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 1.8,
-    ),
-                itemBuilder: (context, index) {
-                  final antwort = session.antworten[index];
-
-                 return ElevatedButton(
-  onPressed: () => checkAntwort(antwort),
-  style: ElevatedButton.styleFrom(
-    padding: const EdgeInsets.all(10),
-  ),
-                    child: Text(
-                      antwort,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  color: Colors.blue,
+                  child: const Text(
+                    "D",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  session.aktuellesKennzeichen,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // 🔥 ANTWORTEN (sauber & fullscreen)
+          Expanded(
+            child: GridView.builder(
+              itemCount: session.antworten.length,
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.2,
               ),
-            ),
+              itemBuilder: (context, index) {
+                final antwort = session.antworten[index];
 
-            const SizedBox(height: 20),
-
-            Text(
-              feedback,
-              style: const TextStyle(fontSize: 22),
+                return GestureDetector(
+                  onTap: () => checkAntwort(antwort),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[850],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Text(
+                          antwort,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // 🔥 Feedback
+          Text(
+            feedback,
+            style: const TextStyle(fontSize: 22),
+          ),
+
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

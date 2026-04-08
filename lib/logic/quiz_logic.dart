@@ -52,7 +52,7 @@ bool checkAntwortLogic(String kennzeichen, String eingabe) {
 
     // 🔥 split bei / und leerzeichen
     List<String> teile =
-        loesungNorm.split(RegExp(r"[\/\s]+"));
+        loesungNorm.split(RegExp(r"[\/\s-]+"));
 
     bool passt = false;
 

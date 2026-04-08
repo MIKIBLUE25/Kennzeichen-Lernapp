@@ -60,6 +60,11 @@ class _QuizInputState extends State<QuizInput> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            Text(
+                "${session.aktuelleFrageNummer} / ${session.gesamtFragen}",
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 10),
             // 🔥 Kennzeichen Design
             Container(
               padding: const EdgeInsets.symmetric(

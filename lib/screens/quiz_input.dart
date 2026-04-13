@@ -16,6 +16,7 @@ class _QuizInputState extends State<QuizInput> {
   final TextEditingController controller = TextEditingController();
 
   String feedback = "";
+  bool beantwortet = false;
 
   @override
   void initState() {
@@ -26,6 +27,8 @@ class _QuizInputState extends State<QuizInput> {
   }
 
   void checkAntwort() {
+    if (beantwortet) return;
+
     String eingabe = controller.text;
 
     bool richtig = checkAntwortLogic(
@@ -34,21 +37,10 @@ class _QuizInputState extends State<QuizInput> {
     );
 
     setState(() {
+      beantwortet = true;
       feedback = richtig
           ? "✅ Richtig!"
           : "❌ Falsch! → ${session.richtigeAntwort}";
-    });
-
-    controller.clear();
-
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        bool weiter = session.naechsteFrage();
-
-        if (!weiter) {
-          feedback = "🎉 Quiz beendet!";
-        }
-      });
     });
   }
 
@@ -60,11 +52,14 @@ class _QuizInputState extends State<QuizInput> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            // 🔥 Fortschritt
             Text(
-                "${session.aktuelleFrageNummer} / ${session.gesamtFragen}",
-                style: const TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 10),
+              "${session.aktuelleFrageNummer} / ${session.gesamtFragen}",
+              style: const TextStyle(fontSize: 18),
+            ),
+
+            const SizedBox(height: 10),
+
             // 🔥 Kennzeichen Design
             Container(
               padding: const EdgeInsets.symmetric(
@@ -103,6 +98,7 @@ class _QuizInputState extends State<QuizInput> {
             // 🔥 Eingabe
             TextField(
               controller: controller,
+              enabled: !beantwortet, // 🔥 sperrt nach prüfen
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: "Stadt eingeben",
@@ -111,6 +107,7 @@ class _QuizInputState extends State<QuizInput> {
 
             const SizedBox(height: 20),
 
+            // 🔥 Prüfen Button
             ElevatedButton(
               onPressed: checkAntwort,
               child: const Text("Prüfen"),
@@ -118,10 +115,32 @@ class _QuizInputState extends State<QuizInput> {
 
             const SizedBox(height: 30),
 
+            // 🔥 Feedback
             Text(
               feedback,
               style: const TextStyle(fontSize: 22),
             ),
+
+            const SizedBox(height: 10),
+
+            // 🔥 Weiter Button
+            if (beantwortet)
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    beantwortet = false;
+                    feedback = "";
+                    controller.clear();
+
+                    bool weiter = session.naechsteFrage();
+
+                    if (!weiter) {
+                      feedback = "🎉 Quiz beendet!";
+                    }
+                  });
+                },
+                child: const Text("Weiter"),
+              ),
           ],
         ),
       ),

@@ -5,9 +5,12 @@ import 'screens/statistik_seite.dart';
 import 'data/kennzeichen_data.dart';
 import 'screens/quiz_multiple_choice.dart';
 import 'screens/quiz_input.dart';
+import 'logic/storage.dart'; 
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // 🔥 wichtig
+  await ladeFortschritt(); // 🔥 lädt gespeicherten Fortschritt
 
-void main() {
   runApp(const MeineApp());
 }
 

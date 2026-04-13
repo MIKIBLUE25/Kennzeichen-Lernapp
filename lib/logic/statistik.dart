@@ -1,15 +1,19 @@
 import '../data/kennzeichen_data.dart';
 
-Map<String, int> berechneStatistik() {
+Map<String, dynamic> berechneStatistik() {
   int zweiRichtig = 0;
   int einmalRichtig = 0;
   int falsch = 0;
   int offen = 0;
 
+  int gesamt = 0;
+
   for (var liste in kennzeichenDaten.values) {
     for (var eintrag in liste) {
-     int richtig = eintrag["richtigCount"] ?? 0;
-int falschCount = eintrag["falschCount"] ?? 0;
+      gesamt++;
+
+      int richtig = eintrag["richtigCount"] ?? 0;
+      int falschCount = eintrag["falschCount"] ?? 0;
 
       if (richtig >= 2) {
         zweiRichtig++;
@@ -23,10 +27,15 @@ int falschCount = eintrag["falschCount"] ?? 0;
     }
   }
 
+  double fortschritt =
+      gesamt == 0 ? 0 : (zweiRichtig / gesamt) * 100;
+
   return {
     "2x": zweiRichtig,
     "1x": einmalRichtig,
     "falsch": falsch,
     "offen": offen,
+    "gesamt": gesamt,
+    "fortschritt": fortschritt.round(),
   };
 }

@@ -1,4 +1,5 @@
 import '../data/kennzeichen_data.dart';
+import 'storage.dart'; // 🔥 WICHTIG hinzufügen
 
 // 🔥 Levenshtein (für Tippfehler)
 int levenshtein(String s, String t) {
@@ -8,11 +9,11 @@ int levenshtein(String s, String t) {
   );
 
   for (int i = 0; i <= s.length; i++) {
-  d[i][0] = i;
-}
+    d[i][0] = i;
+  }
   for (int j = 0; j <= t.length; j++) {
-  d[0][j] = j;
-}
+    d[0][j] = j;
+  }
 
   for (int i = 1; i <= s.length; i++) {
     for (int j = 1; j <= t.length; j++) {
@@ -29,7 +30,8 @@ int levenshtein(String s, String t) {
   return d[s.length][t.length];
 }
 
-bool checkAntwortLogic(String kennzeichen, String eingabe) {
+// 🔥 async + Future<bool>
+Future<bool> checkAntwortLogic(String kennzeichen, String eingabe) async {
   var eintraege = kennzeichenDaten[kennzeichen]!;
 
   String normalize(String text) {
@@ -39,7 +41,7 @@ bool checkAntwortLogic(String kennzeichen, String eingabe) {
         .replaceAll("ö", "oe")
         .replaceAll("ü", "ue")
         .replaceAll("ß", "ss")
-        .replaceAll(RegExp(r"\(.*?\)"), "") // entfernt (veraltet)
+        .replaceAll(RegExp(r"\(.*?\)"), "")
         .trim();
   }
 
@@ -47,30 +49,24 @@ bool checkAntwortLogic(String kennzeichen, String eingabe) {
 
   for (var eintrag in eintraege) {
     String richtigeStadt = eintrag["stadt"];
-
     String loesungNorm = normalize(richtigeStadt);
 
-    // 🔥 split bei / und leerzeichen
     List<String> teile =
         loesungNorm.split(RegExp(r"[\/\s-]+"));
 
     bool passt = false;
 
-    // ✅ exakte Lösung
     if (eingabeNorm == loesungNorm) {
       passt = true;
     }
 
-    // 🔥 Teil + Tippfehler
     for (var teil in teile) {
       if (teil.isEmpty) continue;
 
-      // exakter Teil
       if (eingabeNorm == teil) {
         passt = true;
       }
 
-      // 🔥 max 2 Tippfehler erlaubt
       int dist = levenshtein(eingabeNorm, teil);
 
       if (dist <= 2) {
@@ -82,19 +78,27 @@ bool checkAntwortLogic(String kennzeichen, String eingabe) {
       eintrag["richtigCount"] =
           (eintrag["richtigCount"] ?? 0) + 1;
 
+      eintrag["falschCount"] = 0; // 🔥 reset bei richtig
+
       if (eintrag["richtigCount"] >= 2) {
         eintrag["gelernt"] = true;
       }
+
+      await speichereFortschritt(); // 🔥 speichern
 
       return true;
     }
   }
 
-  // ❌ falsch
+  // ❌ falsch → reset richtigCount
   for (var eintrag in eintraege) {
+    eintrag["richtigCount"] = 0;
+
     eintrag["falschCount"] =
         (eintrag["falschCount"] ?? 0) + 1;
   }
+
+  await speichereFortschritt(); // 🔥 speichern
 
   return false;
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../logic/statistik.dart';
+import '../logic/storage.dart' as storage;
 
 class StatistikSeite extends StatelessWidget {
   const StatistikSeite({super.key});
@@ -18,61 +19,58 @@ class StatistikSeite extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Statistik")),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
 
-            // 🔥 PRÜFUNGSREIFE
-            const SizedBox(height: 20),
+              // 🔥 PRÜFUNGSREIFE
+              const SizedBox(height: 20),
 
-            const Text(
-              "Vorbereitet in %",
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-            ),
+              const Text(
+                "Vorbereitet in %",
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            Text(
-              "$prozent %",
-              style: const TextStyle(fontSize: 32),
-            ),
+              Text(
+                "$prozent %",
+                style: const TextStyle(fontSize: 32),
+              ),
 
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: LinearProgressIndicator(
+              LinearProgressIndicator(
                 value: prozent / 100,
                 minHeight: 12,
                 backgroundColor: Colors.grey[800],
                 valueColor: const AlwaysStoppedAnimation(Colors.green),
               ),
-            ),
 
-            const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-            const Divider(),
+              const Divider(),
 
-            // 🔥 TRAININGS LEVEL
-            const SizedBox(height: 20),
+              // 🔥 TRAININGS LEVEL
+              const SizedBox(height: 20),
 
-            const Text(
-              "Trainings-Level",
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-            ),
+              const Text(
+                "Trainings-Level",
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            Text(
-              "$gesamt | $gesamt Fragen",
-              style: const TextStyle(fontSize: 22),
-            ),
+              Text(
+                "$gesamt | $gesamt Fragen",
+                style: const TextStyle(fontSize: 22),
+              ),
 
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // 🔥 FARBBALKEN (Stacked)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
+              // 🔥 FARBBALKEN
+              Row(
                 children: [
                   _buildBar(zwei, gesamt, Colors.green[900]!),
                   _buildBar(eins, gesamt, Colors.greenAccent),
@@ -80,14 +78,11 @@ class StatistikSeite extends StatelessWidget {
                   _buildBar(offen, gesamt, Colors.white),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // 🔥 LEGENDEN
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Wrap(
+              // 🔥 LEGENDEN
+              Wrap(
                 spacing: 20,
                 runSpacing: 10,
                 children: [
@@ -97,21 +92,18 @@ class StatistikSeite extends StatelessWidget {
                   _legend(Colors.white, offen, "unbeantwortet"),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 40),
+              const SizedBox(height: 40),
 
-            // 🔥 TRAININGSDAUER (OPTIONAL – erstmal statisch)
-            const Text(
-              "Trainingsdauer",
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-            ),
+              // 🔥 TRAININGSDAUER
+              const Text(
+                "Trainingsdauer",
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
+              Row(
                 children: [
                   _timeBox("0 min", "Heute"),
                   const SizedBox(width: 10),
@@ -120,16 +112,58 @@ class StatistikSeite extends StatelessWidget {
                   _timeBox("0 min", "Gesamt"),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 30),
-          ],
+              const SizedBox(height: 40),
+
+              // 🔥 RESET BUTTON
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text("Fortschritt zurücksetzen?"),
+                      content: const Text(
+                          "Alle Daten werden gelöscht. Sicher?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("Abbrechen"),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            await storage.resetFortschritt();
+                            storage.resetDaten();
+
+                            Navigator.pop(context);
+
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const StatistikSeite(),
+                              ),
+                            );
+                          },
+                          child: const Text("Ja"),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: const Text("Fortschritt zurücksetzen"),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // 🔥 Balken Stück
+  // 🔥 Balken
   Widget _buildBar(int value, int total, Color color) {
     double width = total == 0 ? 0 : value / total;
 

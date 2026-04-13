@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/kennzeichen_data.dart';
 
 Map<String, dynamic> berechneStatistik() {
@@ -38,4 +40,18 @@ Map<String, dynamic> berechneStatistik() {
     "gesamt": gesamt,
     "fortschritt": fortschritt.round(),
   };
+}
+Future<void> resetFortschritt() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove("fortschritt");
+}
+
+void resetDaten() {
+  for (var liste in kennzeichenDaten.values) {
+    for (var eintrag in liste) {
+      eintrag["richtigCount"] = 0;
+      eintrag["falschCount"] = 0;
+      eintrag["gelernt"] = false;
+    }
+  }
 }

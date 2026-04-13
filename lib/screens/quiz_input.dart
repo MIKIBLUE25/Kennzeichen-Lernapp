@@ -26,12 +26,12 @@ class _QuizInputState extends State<QuizInput> {
     session.start();
   }
 
-  void checkAntwort() {
+  void checkAntwort() async {
     if (beantwortet) return;
 
     String eingabe = controller.text;
 
-    bool richtig = checkAntwortLogic(
+    bool richtig = await checkAntwortLogic(
       session.aktuellesKennzeichen,
       eingabe,
     );

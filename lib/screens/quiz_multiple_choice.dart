@@ -25,10 +25,10 @@ class _QuizMultipleChoiceState extends State<QuizMultipleChoice> {
     session.start();
   }
 
-  void checkAntwort(String antwort) {
+  void checkAntwort(String antwort) async {
     if (beantwortet) return;
 
-    bool richtig = checkAntwortLogic(
+    bool richtig = await checkAntwortLogic(
       session.aktuellesKennzeichen,
       antwort,
     );

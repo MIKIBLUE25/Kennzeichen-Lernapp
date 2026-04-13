@@ -3,8 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/kennzeichen_data.dart';
 
 Map<String, dynamic> berechneStatistik() {
-  int zweiRichtig = 0;
-  int einmalRichtig = 0;
+  int gelernt = 0;     // 2x richtig
+  int inArbeit = 0;    // 1x richtig
   int falsch = 0;
   int offen = 0;
 
@@ -18,9 +18,9 @@ Map<String, dynamic> berechneStatistik() {
       int falschCount = eintrag["falschCount"] ?? 0;
 
       if (richtig >= 2) {
-        zweiRichtig++;
+        gelernt++;
       } else if (richtig == 1) {
-        einmalRichtig++;
+        inArbeit++;
       } else if (falschCount > 0) {
         falsch++;
       } else {
@@ -29,29 +29,16 @@ Map<String, dynamic> berechneStatistik() {
     }
   }
 
+  // 🔥 NEUE PROZENT LOGIK
   double fortschritt =
-      gesamt == 0 ? 0 : (zweiRichtig / gesamt) * 100;
+      gesamt == 0 ? 0 : ((gelernt * 1.0 + inArbeit * 0.5) / gesamt) * 100;
 
   return {
-    "2x": zweiRichtig,
-    "1x": einmalRichtig,
+    "gelernt": gelernt,
+    "inArbeit": inArbeit,
     "falsch": falsch,
     "offen": offen,
     "gesamt": gesamt,
     "fortschritt": fortschritt.round(),
   };
-}
-Future<void> resetFortschritt() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.remove("fortschritt");
-}
-
-void resetDaten() {
-  for (var liste in kennzeichenDaten.values) {
-    for (var eintrag in liste) {
-      eintrag["richtigCount"] = 0;
-      eintrag["falschCount"] = 0;
-      eintrag["gelernt"] = false;
-    }
-  }
 }

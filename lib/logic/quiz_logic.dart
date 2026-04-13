@@ -42,6 +42,7 @@ Future<bool> checkAntwortLogic(String kennzeichen, String eingabe) async {
         .replaceAll("ü", "ue")
         .replaceAll("ß", "ss")
         .replaceAll(RegExp(r"\(.*?\)"), "")
+        .replaceAll("-", " ")
         .trim();
   }
 

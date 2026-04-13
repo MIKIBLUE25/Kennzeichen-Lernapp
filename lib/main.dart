@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 
 // 👉 eigene Dateien
 import 'screens/statistik_seite.dart';
+import 'screens/suche_seite.dart';
 import 'data/kennzeichen_data.dart';
 import 'screens/quiz_multiple_choice.dart';
 import 'screens/quiz_input.dart';
-import 'logic/storage.dart'; 
+import 'logic/storage.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // 🔥 wichtig
-  await ladeFortschritt(); // 🔥 lädt gespeicherten Fortschritt
+  WidgetsFlutterBinding.ensureInitialized();
+  await ladeFortschritt();
 
   runApp(const MeineApp());
 }
@@ -22,48 +23,166 @@ class MeineApp extends StatelessWidget {
     return MaterialApp(
       title: 'Kennzeichen Trainer',
       theme: ThemeData.dark(),
-      home: const StartSeite(),
+      home: const MainNavigation(), // 🔥 NEU
     );
   }
 }
 
 //
-// 🔹 STARTSEITE
+// 🔥 MAIN NAVIGATION (NEU)
+//
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
+
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
+  int index = 2; // 🔥 Start = Mitte
+
+  final pages = [
+    const StatistikSeite(),
+    const ComingSoonSeite(), // ✅
+    const StartSeite(),
+    const SucheSeite(),
+    const ComingSoonSeite(), // ✅
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: pages[index],
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: index,
+        onTap: (i) => setState(() => index = i),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: "Stats",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.extension),
+            label: "Extra",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Start",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: "Suche",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "Account",
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+//
+// 🔹 STARTSEITE (CARD)
 //
 class StartSeite extends StatelessWidget {
   const StartSeite({super.key});
 
   @override
   Widget build(BuildContext context) {
+    int gelernt = 0;
+    int gesamt = 0;
+    int inArbeit = 0;
+    
+
+
+ for (var liste in kennzeichenDaten.values) {
+  for (var eintrag in liste) {
+    gesamt++;
+
+    int richtig = eintrag["richtigCount"] ?? 0;
+
+    if (richtig >= 2) {
+      gelernt++;
+    } else if (richtig == 1) {
+      inArbeit++;
+    }
+  }
+}
+
+// 🔥 JETZT erst außerhalb der Schleifen
+int offen = gesamt - gelernt - inArbeit;
+
+int prozent =
+    gesamt == 0 ? 0 : ((gelernt / gesamt) * 100).round();
+
     return Scaffold(
       appBar: AppBar(title: const Text("Kennzeichen Trainer")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            ElevatedButton(
-              onPressed: () {
+
+            const SizedBox(height: 10),
+
+            GestureDetector(
+              onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) => const BundeslandSeite()),
                 );
               },
-              child: const Text("Deutschland"),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[850],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: CircularProgressIndicator(
+                            value: gesamt == 0 ? 0 : gelernt / gesamt,
+                            strokeWidth: 5,
+                          ),
+                        ),
+                        Text("$prozent%"),
+                      ],
+                    ),
+
+                    const SizedBox(width: 20),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Deutschland",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "$gelernt gelernt • $inArbeit in Arbeit • $offen offen",
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
 
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const StatistikSeite()),
-                );
-              },
-              child: const Text("Statistik"),
-            ),
           ],
         ),
       ),
@@ -72,10 +191,22 @@ class StartSeite extends StatelessWidget {
 }
 
 //
-// 🔹 BUNDESLÄNDER LISTE
+// 🔹 BUNDESLÄNDER
 //
-class BundeslandSeite extends StatelessWidget {
+class BundeslandSeite extends StatefulWidget {
   const BundeslandSeite({super.key});
+
+  @override
+  State<BundeslandSeite> createState() => _BundeslandSeiteState();
+}
+
+class _BundeslandSeiteState extends State<BundeslandSeite> {
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    setState(() {}); // 🔥 erzwingt refresh
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,13 +261,16 @@ class BundeslandSeite extends StatelessWidget {
           double progress = gesamt == 0 ? 0 : gelernt / gesamt;
 
           return GestureDetector(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => DetailSeite(name: name),
                 ),
               );
+
+              // 🔥 NACH QUIZ → UI REFRESH
+              setState(() {});
             },
             child: Card(
               color: Colors.grey[850],
@@ -190,7 +324,7 @@ class BundeslandSeite extends StatelessWidget {
 }
 
 //
-// 🔹 DETAIL SEITE (Platzhalter)
+// 🔹 DETAIL
 //
 class DetailSeite extends StatelessWidget {
   final String name;
@@ -232,6 +366,35 @@ class DetailSeite extends StatelessWidget {
                 );
               },
               child: const Text("Eingabe-Modus"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+class ComingSoonSeite extends StatelessWidget {
+  const ComingSoonSeite({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.build,
+              size: 60,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Coming Soon",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),

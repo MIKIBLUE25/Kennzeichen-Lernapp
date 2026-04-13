@@ -10,8 +10,8 @@ class StatistikSeite extends StatelessWidget {
   Widget build(BuildContext context) {
     final stats = berechneStatistik();
 
-    int zwei = stats["2x"];
-    int eins = stats["1x"];
+    int gelernt = stats["gelernt"];
+    int inArbeit = stats["inArbeit"];
     int falsch = stats["falsch"];
     int offen = stats["offen"];
     int gesamt = stats["gesamt"];
@@ -93,10 +93,10 @@ class StatistikSeite extends StatelessWidget {
 
                 Row(
                   children: [
-                    _buildBar(zwei, gesamt, Colors.green[900]!),
-                    _buildBar(eins, gesamt, Colors.greenAccent),
-                    _buildBar(falsch, gesamt, Colors.red),
-                    _buildBar(offen, gesamt, Colors.white),
+                  _buildBar(gelernt, gesamt, Colors.green[900]!),
+                  _buildBar(inArbeit, gesamt, Colors.greenAccent),
+                  _buildBar(falsch, gesamt, Colors.red),
+                  _buildBar(offen, gesamt, Colors.white),
                   ],
                 ),
 
@@ -106,10 +106,10 @@ class StatistikSeite extends StatelessWidget {
                   spacing: 20,
                   runSpacing: 10,
                   children: [
-                    _legend(Colors.green[900]!, zwei, "2x richtig"),
-                    _legend(Colors.greenAccent, eins, "1x richtig"),
-                    _legend(Colors.red, falsch, "falsch"),
-                    _legend(Colors.white, offen, "unbeantwortet"),
+                  _legend(Colors.green[900]!, gelernt, "gelernt"),
+                  _legend(Colors.greenAccent, inArbeit, "in Arbeit"),
+                  _legend(Colors.red, falsch, "falsch"),
+                  _legend(Colors.white, offen, "offen"),
                   ],
                 ),
 

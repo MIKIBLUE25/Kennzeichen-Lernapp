@@ -7,6 +7,7 @@ class QuizSession {
 
   List<String> _quizKeys = [];
   int _currentIndex = 0;
+  int richtigBeantwortet = 0;
 
   String aktuellesKennzeichen = "";
   String richtigeAntwort = "";
@@ -96,16 +97,15 @@ class QuizSession {
     return antwort == richtigeAntwort;
   }
 
-  bool naechsteFrage() {
-    _currentIndex++;
-
-    if (_currentIndex >= _quizKeys.length) {
-      return false; // fertig
-    }
-
-    _ladeFrage();
-    return true;
+bool naechsteFrage() {
+  if (_currentIndex + 1 >= _quizKeys.length) {
+    return false; // ❌ stoppt sauber bei letzter Frage
   }
+
+  _currentIndex++;
+  _ladeFrage();
+  return true;
+}
 
   int get aktuelleFrageNummer => _currentIndex + 1;
   int get gesamtFragen => _quizKeys.length;

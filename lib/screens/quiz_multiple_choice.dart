@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../logic/quiz_session.dart';
 import '../logic/quiz_logic.dart';
+import 'quiz_ende.dart';
 
 class QuizMultipleChoice extends StatefulWidget {
   final String bundesland;
@@ -32,7 +33,9 @@ class _QuizMultipleChoiceState extends State<QuizMultipleChoice> {
       session.aktuellesKennzeichen,
       antwort,
     );
-
+    if (richtig) {
+      session.richtigBeantwortet++;
+    }
     setState(() {
       beantwortet = true;
       feedback = richtig
@@ -157,8 +160,17 @@ class _QuizMultipleChoiceState extends State<QuizMultipleChoice> {
 
                     bool weiter = session.naechsteFrage();
 
-                    if (!weiter) {
-                      feedback = "🎉 Quiz beendet!";
+                      if (!weiter) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => QuizEndeSeite(
+                            richtig: session.richtigBeantwortet,
+                            gesamt: session.gesamtFragen,
+                            bundesland: widget.bundesland,
+                          ),
+                        ),
+                      );
                     }
                   });
                 },

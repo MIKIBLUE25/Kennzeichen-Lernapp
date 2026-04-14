@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../logic/quiz_session.dart';
 import '../logic/quiz_logic.dart';
+import 'quiz_ende.dart';
 
 class QuizInput extends StatefulWidget {
   final String bundesland;
@@ -36,6 +37,9 @@ class _QuizInputState extends State<QuizInput> {
       eingabe,
     );
 
+    if (richtig) {
+    session.richtigBeantwortet++;
+  }
     setState(() {
       beantwortet = true;
       feedback = richtig
@@ -135,7 +139,16 @@ class _QuizInputState extends State<QuizInput> {
                     bool weiter = session.naechsteFrage();
 
                     if (!weiter) {
-                      feedback = "🎉 Quiz beendet!";
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => QuizEndeSeite(
+                            richtig: session.richtigBeantwortet,
+                            gesamt: session.gesamtFragen,
+                            bundesland: widget.bundesland,
+                          ),
+                        ),
+                      );
                     }
                   });
                 },

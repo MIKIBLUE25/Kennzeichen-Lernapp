@@ -9,16 +9,41 @@ class SucheSeite extends StatefulWidget {
 }
 
 class _SucheSeiteState extends State<SucheSeite> {
-  String query = "";
+  final TextEditingController controller = TextEditingController();
 
-  @override
-  Widget build(BuildContext context) {
-    List<Map<String, dynamic>> results = [];
+  String query = "";
+  bool unscharf = false;
+
+  List<Map<String, dynamic>> results = [];
+
+  void sucheStarten() {
+    final eingabe = controller.text.trim().toLowerCase();
+
+    if (eingabe.isEmpty) {
+      setState(() {
+        results = [];
+      });
+      return;
+    }
+
+    List<Map<String, dynamic>> temp = [];
 
     kennzeichenDaten.forEach((kuerzel, liste) {
-      if (kuerzel.toLowerCase().contains(query.toLowerCase())) {
-        for (var eintrag in liste) {
-          results.add({
+      for (var eintrag in liste) {
+        bool match;
+
+        if (unscharf) {
+          // Nicht-sicher-Modus:
+          // Alle Kennzeichen anzeigen, die zur Eingabe passen.
+          match = kuerzel.toLowerCase().contains(eingabe);
+        } else {
+          // Exakt-Modus:
+          // Nur das genau eingegebene Kennzeichen anzeigen.
+          match = kuerzel.toLowerCase() == eingabe;
+        }
+
+        if (match) {
+          temp.add({
             "kuerzel": kuerzel,
             "stadt": eintrag["stadt"],
             "gelernt": eintrag["gelernt"] ?? false,
@@ -27,8 +52,25 @@ class _SucheSeiteState extends State<SucheSeite> {
       }
     });
 
+    setState(() {
+      query = eingabe;
+      results = temp;
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Suche")),
+      appBar: AppBar(
+        title: const Text("Suche"),
+      ),
+
       body: Column(
         children: [
 
@@ -36,41 +78,105 @@ class _SucheSeiteState extends State<SucheSeite> {
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
-              onChanged: (value) {
-                setState(() {
-                  query = value;
-                });
+              controller: controller,
+
+              // Suche erst nach ENTER
+              onSubmitted: (_) {
+                sucheStarten();
               },
-              decoration: const InputDecoration(
+
+              decoration: InputDecoration(
                 hintText: "Kennzeichen eingeben...",
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: sucheStarten,
+                ),
               ),
             ),
           ),
 
+          // 🔄 Suchmodus
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text("Exakt"),
+
+              Switch(
+                value: unscharf,
+                onChanged: (value) {
+                  setState(() {
+                    unscharf = value;
+                    results = [];
+                  });
+                },
+              ),
+
+              const Text("Nicht sicher"),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
           // 🔥 Ergebnisse
           Expanded(
-            child: ListView.builder(
-              itemCount: results.length,
-              itemBuilder: (context, index) {
-                final item = results[index];
+            child: results.isEmpty
+                ? Center(
+                    child: Text(
+                      query.isEmpty
+                          ? "Kennzeichen suchen"
+                          : "Keine Ergebnisse gefunden",
+                      style: const TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: results.length,
 
-                return ListTile(
-                  title: Text(
-                    "${item["kuerzel"]} → ${item["stadt"]}",
-                    style: const TextStyle(fontSize: 18),
+                    itemBuilder: (context, index) {
+                      final item = results[index];
+
+                      final String kuerzel =
+                          item["kuerzel"].toString();
+
+                      final String stadt =
+                          item["stadt"].toString();
+
+                      final bool gelernt =
+                          item["gelernt"] == true;
+
+                      return ListTile(
+
+                        // Im Exakt-Modus:
+                        // nur Stadt anzeigen.
+                        //
+                        // Im Nicht-sicher-Modus:
+                        // Kürzel + Stadt anzeigen.
+                        title: Text(
+                          unscharf
+                              ? "$kuerzel → $stadt"
+                              : stadt,
+
+                          style: const TextStyle(
+                            fontSize: 18,
+                          ),
+                        ),
+
+                        // Lernstatus
+                        trailing: Icon(
+                          gelernt
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+
+                          color: gelernt
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                      );
+                    },
                   ),
-                  trailing: Icon(
-                    item["gelernt"]
-                        ? Icons.check_circle
-                        : Icons.cancel,
-                    color: item["gelernt"]
-                        ? Colors.green
-                        : Colors.red,
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),

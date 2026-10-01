@@ -28,6 +28,20 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
   bool beantwortet = false;
   bool richtig = false;
 
+  static const String wasserstrassenverwaltung =
+      'Bundes-Wasserstraßen- und Schifffahrtsverwaltung';
+
+  static const Set<String> wasserstrassenKennzeichen = {
+    'BW1',
+    'BW2',
+    'BW3',
+    'BW4',
+    'BW5',
+    'BW6',
+    'BW7',
+    'BW8',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +54,7 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
     aktuellesKennzeichen = session.aktuellesKennzeichen;
 
     final eintraege = kennzeichenDaten[aktuellesKennzeichen]!;
+
     aktuelleStadt = (eintraege[0]['stadt'] as String?) ?? '';
 
     controller.clear();
@@ -47,22 +62,37 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
     richtig = false;
   }
 
-  Future<void> _antwortPruefen() async {
-    if (beantwortet || controller.text.trim().isEmpty) return;
-
-    // Leerzeichen und Bindestriche werden ignoriert.
-    // Alle Buchstaben und Zahlen müssen exakt übereinstimmen.
-    final eingabe = controller.text
+  String _normalisieren(String text) {
+    return text
         .trim()
         .toUpperCase()
         .replaceAll(RegExp(r'[\s-]+'), '');
+  }
 
-    final loesung = aktuellesKennzeichen
-        .toUpperCase()
-        .replaceAll(RegExp(r'[\s-]+'), '');
+  bool _antwortIstRichtig(String eingabe) {
+    final eingabeNorm = _normalisieren(eingabe);
+    final loesungNorm = _normalisieren(aktuellesKennzeichen);
 
-    // Keine Fehlertoleranz: Das vollständige Kürzel muss stimmen.
-    final passt = eingabe == loesung;
+    if (eingabeNorm.isEmpty) {
+      return false;
+    }
+
+    // Sonderregel: Bei der Wasserstraßenverwaltung sind BW1 bis BW8
+    // gültige Antworten, unabhängig davon, welches BW-Kürzel
+    // gerade als Frage angezeigt wird.
+    if (aktuelleStadt == wasserstrassenverwaltung) {
+      return wasserstrassenKennzeichen.contains(eingabeNorm);
+    }
+
+    // Für alle anderen Kennzeichen gilt ausschließlich
+    // die exakte Übereinstimmung.
+    return eingabeNorm == loesungNorm;
+  }
+
+  Future<void> _antwortPruefen() async {
+    if (beantwortet || controller.text.trim().isEmpty) return;
+
+    final passt = _antwortIstRichtig(controller.text);
 
     final eintraege = kennzeichenDaten[aktuellesKennzeichen]!;
 
@@ -138,13 +168,11 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
                 ),
               ),
               const SizedBox(height: 28),
-
               Text(
                 '${session.aktuelleFrageNummer} / ${session.gesamtFragen}',
                 style: const TextStyle(fontSize: 22),
               ),
               const SizedBox(height: 48),
-
               Text(
                 aktuelleStadt,
                 textAlign: TextAlign.center,
@@ -153,9 +181,7 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 48),
-
               TextField(
                 controller: controller,
                 enabled: !beantwortet,
@@ -174,9 +200,7 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 26),
-
               if (!beantwortet)
                 ElevatedButton(
                   onPressed: _antwortPruefen,
@@ -189,7 +213,6 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
                     style: TextStyle(fontSize: 21),
                   ),
                 ),
-
               if (beantwortet) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -206,9 +229,7 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
                   ),
                 ),
               ],
-
               const Spacer(),
-
               if (beantwortet)
                 SizedBox(
                   width: double.infinity,

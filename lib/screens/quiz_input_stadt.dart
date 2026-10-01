@@ -1,7 +1,10 @@
+
 import 'package:flutter/material.dart';
 import '../data/kennzeichen_data.dart';
 import '../logic/quiz_logic.dart';
 import '../logic/storage.dart';
+import '../logic/quiz_session.dart';
+import 'quiz_ende.dart';
 
 class QuizInputStadt extends StatefulWidget {
   final String bundesland;
@@ -18,132 +21,93 @@ class QuizInputStadt extends StatefulWidget {
 class _QuizInputStadtState extends State<QuizInputStadt> {
   final TextEditingController controller = TextEditingController();
 
-  String aktuellesKennzeichen = "";
-  String aktuelleStadt = "";
+  late QuizSession session;
+
+  String aktuellesKennzeichen = '';
+  String aktuelleStadt = '';
 
   bool beantwortet = false;
   bool richtig = false;
 
-  List<String> quizKeys = [];
-  int aktuelleFrage = 0;
-
   @override
   void initState() {
     super.initState();
-    _quizStarten();
-  }
-
-  void _quizStarten() {
-    List<String> keys = [];
-
-    for (var entry in kennzeichenDaten.entries) {
-      for (var eintrag in entry.value) {
-        if (widget.bundesland == "Deutschland" ||
-            eintrag["bundesland"] == widget.bundesland ||
-            (widget.bundesland == "Bundesweit" &&
-                eintrag["bundesland"] == "Bundesweit")) {
-          keys.add(entry.key);
-          break;
-        }
-      }
-    }
-
-    keys.shuffle();
-
-    quizKeys = keys.take(20).toList();
-
-    if (quizKeys.isNotEmpty) {
-      _frageLaden();
-    }
+    session = QuizSession(bundesland: widget.bundesland);
+    session.start();
+    _frageLaden();
   }
 
   void _frageLaden() {
-    if (aktuelleFrage >= quizKeys.length) {
-      return;
-    }
+    aktuellesKennzeichen = session.aktuellesKennzeichen;
 
-    aktuellesKennzeichen = quizKeys[aktuelleFrage];
-
-    var eintraege = kennzeichenDaten[aktuellesKennzeichen]!;
-
-    aktuelleStadt =
-        (eintraege[0]["stadt"] as String?) ?? "";
+    final eintraege = kennzeichenDaten[aktuellesKennzeichen]!;
+    aktuelleStadt = (eintraege[0]['stadt'] as String?) ?? '';
 
     controller.clear();
-
     beantwortet = false;
     richtig = false;
-
-    setState(() {});
   }
 
-  void _antwortPruefen() async {
-    if (beantwortet) return;
+  Future<void> _antwortPruefen() async {
+    if (beantwortet || controller.text.trim().isEmpty) return;
 
-    final eingabe = controller.text.trim();
+    final eingabe = controller.text.trim().toUpperCase()
+        .replaceAll(RegExp(r'[\s-]+'), '');
 
-    if (eingabe.isEmpty) return;
+    final loesung = aktuellesKennzeichen.toUpperCase()
+        .replaceAll(RegExp(r'[\s-]+'), '');
 
-    bool passt = _pruefeKennzeichen(eingabe);
+    final passt = eingabe == loesung ||
+        (eingabe.length >= 2 &&
+            loesung.length >= 2 &&
+            levenshtein(eingabe, loesung) <= 2);
+
+    final eintraege = kennzeichenDaten[aktuellesKennzeichen]!;
+
+    if (passt) {
+      eintraege[0]['richtigCount'] =
+          (eintraege[0]['richtigCount'] ?? 0) + 1;
+
+      if (eintraege[0]['richtigCount'] >= 2) {
+        eintraege[0]['gelernt'] = true;
+      }
+
+      session.richtigBeantwortet++;
+    } else {
+      eintraege[0]['falschCount'] =
+          (eintraege[0]['falschCount'] ?? 0) + 1;
+    }
+
+    await speichereFortschritt();
+
+    if (!mounted) return;
 
     setState(() {
       beantwortet = true;
       richtig = passt;
     });
-
-    var eintraege = kennzeichenDaten[aktuellesKennzeichen]!;
-
-    if (passt) {
-      eintraege[0]["richtigCount"] =
-          (eintraege[0]["richtigCount"] ?? 0) + 1;
-
-      if (eintraege[0]["richtigCount"] >= 2) {
-        eintraege[0]["gelernt"] = true;
-      }
-    } else {
-      eintraege[0]["falschCount"] =
-          (eintraege[0]["falschCount"] ?? 0) + 1;
-    }
-
-    await speichereFortschritt();
-  }
-
-  bool _pruefeKennzeichen(String eingabe) {
-    String normalize(String text) {
-      return text
-          .toUpperCase()
-          .replaceAll(" ", "")
-          .replaceAll("-", "")
-          .trim();
-    }
-
-    String eingabeNorm = normalize(eingabe);
-    String loesungNorm = normalize(aktuellesKennzeichen);
-
-    if (eingabeNorm == loesungNorm) {
-      return true;
-    }
-
-    // Bis zu 2 Tippfehler erlauben
-    int dist = levenshtein(
-      eingabeNorm,
-      loesungNorm,
-    );
-
-    return dist <= 2;
   }
 
   void _weiter() {
     if (!beantwortet) return;
 
-    if (aktuelleFrage + 1 >= quizKeys.length) {
-      Navigator.pop(context);
+    final hatWeitereFrage = session.naechsteFrage();
+
+    if (!hatWeitereFrage) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QuizEndeSeite(
+            richtig: session.richtigBeantwortet,
+            gesamt: session.gesamtFragen,
+            bundesland: widget.bundesland,
+          ),
+        ),
+      );
       return;
     }
 
-    aktuelleFrage++;
-
-    _frageLaden();
+    setState(_frageLaden);
   }
 
   @override
@@ -156,82 +120,110 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Ort → Kürzel"),
+        title: const Text('Ort → Kürzel'),
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-
-            Text(
-              "${aktuelleFrage + 1} / ${quizKeys.length}",
-              style: const TextStyle(
-                fontSize: 18,
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            Text(
-              aktuelleStadt,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            TextField(
-              controller: controller,
-              enabled: !beantwortet,
-              textAlign: TextAlign.center,
-              textCapitalization: TextCapitalization.characters,
-              onSubmitted: (_) {
-                _antwortPruefen();
-              },
-              decoration: const InputDecoration(
-                hintText: "Kennzeichen eingeben",
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            if (beantwortet)
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+          child: Column(
+            children: [
               Text(
-                richtig
-                    ? "Richtig!"
-                    : "Falsch! Richtig wäre: $aktuellesKennzeichen",
-                textAlign: TextAlign.center,
+                widget.bundesland,
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 16,
+                  color: Colors.grey[400],
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              Text(
+                '${session.aktuelleFrageNummer} / ${session.gesamtFragen}',
+                style: const TextStyle(fontSize: 22),
+              ),
+              const SizedBox(height: 48),
+
+              Text(
+                aktuelleStadt,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 38,
                   fontWeight: FontWeight.bold,
-                  color: richtig ? Colors.green : Colors.red,
                 ),
               ),
 
-            const Spacer(),
+              const SizedBox(height: 48),
 
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed:
-                    beantwortet ? _weiter : _antwortPruefen,
-                child: Text(
-                  beantwortet ? "Weiter" : "Prüfen",
-                  style: const TextStyle(
-                    fontSize: 18,
+              TextField(
+                controller: controller,
+                enabled: !beantwortet,
+                textAlign: TextAlign.center,
+                textCapitalization: TextCapitalization.characters,
+                onSubmitted: (_) => _antwortPruefen(),
+                style: const TextStyle(fontSize: 24),
+                decoration: InputDecoration(
+                  hintText: 'Kennzeichen eingeben',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 24,
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 26),
+
+              if (!beantwortet)
+                ElevatedButton(
+                  onPressed: _antwortPruefen,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(210, 64),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: const Text(
+                    'Prüfen',
+                    style: TextStyle(fontSize: 21),
+                  ),
+                ),
+
+              if (beantwortet) ...[
+                const SizedBox(height: 8),
+                Text(
+                  richtig
+                      ? '✓ Richtig!'
+                      : '✕ Falsch! Richtig wäre: $aktuellesKennzeichen',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: richtig
+                        ? const Color(0xFF4CAF50)
+                        : const Color(0xFFEF5350),
+                  ),
+                ),
+              ],
+
+              const Spacer(),
+
+              if (beantwortet)
+                SizedBox(
+                  width: double.infinity,
+                  height: 64,
+                  child: ElevatedButton(
+                    onPressed: _weiter,
+                    style: ElevatedButton.styleFrom(
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text(
+                      'Weiter',
+                      style: TextStyle(fontSize: 21),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

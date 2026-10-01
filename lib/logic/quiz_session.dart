@@ -21,25 +21,60 @@ class QuizSession {
   void start() {
     final random = Random();
 
-    List<String> keys = [];
+    List<String> ungelernt = [];
+    List<String> inArbeit = [];
+    List<String> gelernt = [];
 
-    // 🔥 Filter nach Bundesland
+    // Kennzeichen nach Lernstand sortieren
     for (var entry in kennzeichenDaten.entries) {
       for (var eintrag in entry.value) {
         if (bundesland == "Deutschland" ||
             eintrag["bundesland"] == bundesland ||
             (bundesland == "Bundesweit" &&
                 eintrag["bundesland"] == "Bundesweit")) {
-          keys.add(entry.key);
+          
+          int richtig = eintrag["richtigCount"] ?? 0;
+
+          if (richtig == 0) {
+            // Noch nie richtig beantwortet
+            ungelernt.add(entry.key);
+          } else if (richtig == 1) {
+            // Einmal richtig beantwortet
+            inArbeit.add(entry.key);
+          } else {
+            // Mindestens zweimal richtig
+            gelernt.add(entry.key);
+          }
+
           break;
         }
       }
     }
 
-    keys.shuffle();
+    // Jede Gruppe zufällig mischen.
+    // Dadurch wird innerhalb der Priorität weiterhin
+    // für Abwechslung gesorgt.
+    ungelernt.shuffle(random);
+    inArbeit.shuffle(random);
+    gelernt.shuffle(random);
 
-    _quizKeys = keys.take(anzahlFragen).toList();
+    List<String> auswahl = [];
+
+    // 1. Zuerst noch komplett ungelernte Kennzeichen
+    auswahl.addAll(ungelernt);
+
+    // 2. Danach Kennzeichen, die einmal richtig waren
+    auswahl.addAll(inArbeit);
+
+    // 3. Falls noch Plätze frei sind:
+    // Bereits gelernte Kennzeichen als Wiederholung verwenden
+    auswahl.addAll(gelernt);
+
+    // Auf die gewünschte Anzahl Fragen begrenzen
+    _quizKeys = auswahl.take(anzahlFragen).toList();
+
     _currentIndex = 0;
+    richtigBeantwortet = 0;
 
     _ladeFrage();
   }
@@ -51,7 +86,8 @@ class QuizSession {
 
     var eintraege = kennzeichenDaten[aktuellesKennzeichen]!;
 
-    richtigeAntwort = (eintraege[0]["stadt"] as String?) ?? "";
+    richtigeAntwort =
+        (eintraege[0]["stadt"] as String?) ?? "";
 
     _generiereAntworten();
   }
@@ -65,28 +101,36 @@ class QuizSession {
 
     for (var liste in kennzeichenDaten.values) {
       for (var eintrag in liste) {
-        alleStaedte.add((eintrag["stadt"] as String?) ?? "");
+        alleStaedte.add(
+          (eintrag["stadt"] as String?) ?? "",
+        );
       }
     }
 
-    // aehnliche (gleicher Anfangsbuchstabe)
+    // Ähnliche Städte bevorzugen
+    // (gleicher Anfangsbuchstabe)
     List<String> aehnliche = alleStaedte.where((stadt) {
-      if (stadt.isEmpty || richtigeAntwort.isEmpty) return false;
+      if (stadt.isEmpty || richtigeAntwort.isEmpty) {
+        return false;
+      }
+
       return stadt[0].toLowerCase() ==
           richtigeAntwort[0].toLowerCase();
     }).toList();
 
-    aehnliche.shuffle();
+    aehnliche.shuffle(random);
 
     for (var stadt in aehnliche) {
       if (antwortSet.length >= 4) break;
+
       antwortSet.add(stadt);
     }
 
-    // fallback
+    // Falls nicht genügend ähnliche Städte vorhanden sind
     while (antwortSet.length < 4) {
       String randomStadt =
           alleStaedte[random.nextInt(alleStaedte.length)];
+
       antwortSet.add(randomStadt);
     }
 
@@ -94,19 +138,27 @@ class QuizSession {
   }
 
   bool checkAntwort(String antwort) {
-    return antwort == richtigeAntwort;
+    bool richtig = antwort == richtigeAntwort;
+
+    if (richtig) {
+      richtigBeantwortet++;
+    }
+
+    return richtig;
   }
 
-bool naechsteFrage() {
-  if (_currentIndex + 1 >= _quizKeys.length) {
-    return false; // ❌ stoppt sauber bei letzter Frage
-  }
+  bool naechsteFrage() {
+    if (_currentIndex + 1 >= _quizKeys.length) {
+      return false;
+    }
 
-  _currentIndex++;
-  _ladeFrage();
-  return true;
-}
+    _currentIndex++;
+    _ladeFrage();
+
+    return true;
+  }
 
   int get aktuelleFrageNummer => _currentIndex + 1;
+
   int get gesamtFragen => _quizKeys.length;
 }

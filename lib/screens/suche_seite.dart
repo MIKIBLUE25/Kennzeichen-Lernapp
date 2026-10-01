@@ -17,10 +17,11 @@ class _SucheSeiteState extends State<SucheSeite> {
   List<Map<String, dynamic>> results = [];
 
   void sucheStarten() {
-    final eingabe = controller.text.trim().toLowerCase();
+    final eingabe = controller.text.trim().toUpperCase();
 
     if (eingabe.isEmpty) {
       setState(() {
+        query = "";
         results = [];
       });
       return;
@@ -29,17 +30,25 @@ class _SucheSeiteState extends State<SucheSeite> {
     List<Map<String, dynamic>> temp = [];
 
     kennzeichenDaten.forEach((kuerzel, liste) {
+      final kuerzelGross = kuerzel.toUpperCase();
+
       for (var eintrag in liste) {
         bool match;
 
         if (unscharf) {
           // Nicht-sicher-Modus:
-          // Alle Kennzeichen anzeigen, die zur Eingabe passen.
-          match = kuerzel.toLowerCase().contains(eingabe);
+          // Nur Kennzeichen, die MIT der Eingabe beginnen.
+          //
+          // Beispiel:
+          // F  -> F, FA, FB, FD, FE, FF, FL, ...
+          // FR -> FR, FRA, FRG, FRI, ...
+          //
+          // IF, KF, AF usw. werden NICHT angezeigt.
+          match = kuerzelGross.startsWith(eingabe);
         } else {
           // Exakt-Modus:
-          // Nur das genau eingegebene Kennzeichen anzeigen.
-          match = kuerzel.toLowerCase() == eingabe;
+          // Nur das genau eingegebene Kennzeichen.
+          match = kuerzelGross == eingabe;
         }
 
         if (match) {
@@ -51,6 +60,39 @@ class _SucheSeiteState extends State<SucheSeite> {
         }
       }
     });
+
+    if (unscharf) {
+      // Treffer sortieren:
+      //
+      // 1. Exakte Übereinstimmung zuerst
+      // 2. Danach kürzere Kennzeichen
+      // 3. Bei gleicher Länge alphabetisch
+
+      temp.sort((a, b) {
+        final aKuerzel = a["kuerzel"].toString().toUpperCase();
+        final bKuerzel = b["kuerzel"].toString().toUpperCase();
+
+        // Exakte Übereinstimmung zuerst
+        if (aKuerzel == eingabe && bKuerzel != eingabe) {
+          return -1;
+        }
+
+        if (bKuerzel == eingabe && aKuerzel != eingabe) {
+          return 1;
+        }
+
+        // Kürzere Kennzeichen zuerst
+        final laengeVergleich =
+            aKuerzel.length.compareTo(bKuerzel.length);
+
+        if (laengeVergleich != 0) {
+          return laengeVergleich;
+        }
+
+        // Bei gleicher Länge alphabetisch sortieren
+        return aKuerzel.compareTo(bKuerzel);
+      });
+    }
 
     setState(() {
       query = eingabe;
@@ -73,8 +115,7 @@ class _SucheSeiteState extends State<SucheSeite> {
 
       body: Column(
         children: [
-
-          // 🔍 Suchfeld
+          // Suchfeld
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
@@ -97,7 +138,7 @@ class _SucheSeiteState extends State<SucheSeite> {
             ),
           ),
 
-          // 🔄 Suchmodus
+          // Suchmodus
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -119,7 +160,7 @@ class _SucheSeiteState extends State<SucheSeite> {
 
           const SizedBox(height: 10),
 
-          // 🔥 Ergebnisse
+          // Ergebnisse
           Expanded(
             child: results.isEmpty
                 ? Center(
@@ -148,7 +189,6 @@ class _SucheSeiteState extends State<SucheSeite> {
                           item["gelernt"] == true;
 
                       return ListTile(
-
                         // Im Exakt-Modus:
                         // nur Stadt anzeigen.
                         //
@@ -158,7 +198,6 @@ class _SucheSeiteState extends State<SucheSeite> {
                           unscharf
                               ? "$kuerzel → $stadt"
                               : stadt,
-
                           style: const TextStyle(
                             fontSize: 18,
                           ),
@@ -169,7 +208,6 @@ class _SucheSeiteState extends State<SucheSeite> {
                           gelernt
                               ? Icons.check_circle
                               : Icons.radio_button_unchecked,
-
                           color: gelernt
                               ? Colors.green
                               : Colors.grey,

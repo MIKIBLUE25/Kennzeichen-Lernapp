@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
 import '../data/kennzeichen_data.dart';
-import '../logic/quiz_logic.dart';
 import '../logic/storage.dart';
 import '../logic/quiz_session.dart';
 import 'quiz_ende.dart';
@@ -51,16 +50,19 @@ class _QuizInputStadtState extends State<QuizInputStadt> {
   Future<void> _antwortPruefen() async {
     if (beantwortet || controller.text.trim().isEmpty) return;
 
-    final eingabe = controller.text.trim().toUpperCase()
+    // Leerzeichen und Bindestriche werden ignoriert.
+    // Alle Buchstaben und Zahlen müssen exakt übereinstimmen.
+    final eingabe = controller.text
+        .trim()
+        .toUpperCase()
         .replaceAll(RegExp(r'[\s-]+'), '');
 
-    final loesung = aktuellesKennzeichen.toUpperCase()
+    final loesung = aktuellesKennzeichen
+        .toUpperCase()
         .replaceAll(RegExp(r'[\s-]+'), '');
 
-    final passt = eingabe == loesung ||
-        (eingabe.length >= 2 &&
-            loesung.length >= 2 &&
-            levenshtein(eingabe, loesung) <= 2);
+    // Keine Fehlertoleranz: Das vollständige Kürzel muss stimmen.
+    final passt = eingabe == loesung;
 
     final eintraege = kennzeichenDaten[aktuellesKennzeichen]!;
 

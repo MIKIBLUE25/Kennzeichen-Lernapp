@@ -7,6 +7,7 @@ import 'data/kennzeichen_data.dart';
 import 'screens/quiz_multiple_choice.dart';
 import 'screens/quiz_input.dart';
 import 'logic/storage.dart';
+import 'screens/quiz_input_stadt.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -329,24 +330,30 @@ class _BundeslandSeiteState extends State<BundeslandSeite> {
 class DetailSeite extends StatelessWidget {
   final String name;
 
-  const DetailSeite({super.key, required this.name});
+  const DetailSeite({
+    super.key,
+    required this.name,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(name)),
+      appBar: AppBar(
+        title: Text(name),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
+            // Multiple Choice
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        QuizMultipleChoice(bundesland: name),
+                    builder: (_) => QuizMultipleChoice(
+                      bundesland: name,
+                    ),
                   ),
                 );
               },
@@ -355,17 +362,36 @@ class DetailSeite extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            // Kürzel → Ort
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        QuizInput(bundesland: name),
+                    builder: (_) => QuizInput(
+                      bundesland: name,
+                    ),
                   ),
                 );
               },
-              child: const Text("Eingabe-Modus"),
+              child: const Text("Kürzel → Ort"),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Ort → Kürzel
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => QuizInputStadt(
+                      bundesland: name,
+                    ),
+                  ),
+                );
+              },
+              child: const Text("Ort → Kürzel"),
             ),
           ],
         ),

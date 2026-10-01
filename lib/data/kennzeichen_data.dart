@@ -390,6 +390,7 @@ final Map<String, List<Map<String, dynamic>>> kennzeichenDaten = {
   "HB": [{"stadt": "Bremen", "bundesland": "Bremen", "gelernt": false}],
 
     // ---------------- SCHLESWIG-HOLSTEIN ----------------
+  "AG": [{"stadt": "Helgoland", "bundesland": "Schleswig-Holstein", "gelernt": false}],
   "ECK": [{"stadt": "Rendsburg-Eckernförde", "bundesland": "Schleswig-Holstein", "gelernt": false}],
   "EUT": [{"stadt": "Eutin (veraltet)", "bundesland": "Schleswig-Holstein", "gelernt": false}],
   "FL": [{"stadt": "Flensburg", "bundesland": "Schleswig-Holstein", "gelernt": false}],
